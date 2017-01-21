@@ -1,0 +1,41 @@
+{
+  "name": "coven",
+  "version": "0.1.0",
+  "description": "A pain-free way to handle a mesh of peers via WebRTC",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "babel src/index.js --out-file=index.js --presets=es2015",
+    "prepublish": "npm run build",
+    "start": "node bin/coven.js"
+  },
+  "bin": {
+    "coven": "./bin/coven.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oakfang/coven.git"
+  },
+  "keywords": [
+    "peer",
+    "p2p",
+    "mesh",
+    "webrtc"
+  ],
+  "author": "Alon Niv",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/oakfang/coven/issues"
+  },
+  "homepage": "https://github.com/oakfang/coven#readme",
+  "dependencies": {
+    "simple-peer": "^6.2.1",
+    "uuid": "^3.0.1",
+    "ws": "^1.1.1"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.22.2",
+    "babel-preset-es2015": "^6.22.0",
+    "wrtc": "0.0.61"
+  }
+}
