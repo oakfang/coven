@@ -1,12 +1,10 @@
 {
   "name": "coven",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A pain-free way to handle a mesh of peers via WebRTC",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "babel src/index.js --out-file=index.js --presets=es2015",
-    "prepublish": "npm run build",
     "start": "node bin/coven.js"
   },
   "bin": {
@@ -31,11 +29,7 @@
   "dependencies": {
     "simple-peer": "^6.2.1",
     "uuid": "^3.0.1",
-    "ws": "^1.1.1"
-  },
-  "devDependencies": {
-    "babel-cli": "^6.22.2",
-    "babel-preset-es2015": "^6.22.0",
+    "ws": "^1.1.1",
     "wrtc": "0.0.61"
   }
 }
