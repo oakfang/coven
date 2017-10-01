@@ -1,13 +1,16 @@
 const WebSocket = require('ws');
 
 function getServer(config, onMessage) {
+  Object.assign(config || {}, {
+    clientTracking: true
+  });
   const wss = new WebSocket.Server(config);
   const peers = new Map();
   const rooms = {};
-  const broadcast = data => wss.clients
-                               .filter(({ readyState }) =>
-                                  readyState === WebSocket.OPEN)
-                               .forEach(client => client.send(data));
+  const broadcast = data => Array.from(wss.clients)
+                                 .filter(({ readyState }) =>
+                                    readyState === WebSocket.OPEN)
+                                 .forEach(client => client.send(data));
   wss.on('connection', ws => {
     ws.on('close', () => {
       if (peers.has(ws)) {

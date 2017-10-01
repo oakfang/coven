@@ -1,6 +1,6 @@
 {
   "name": "coven",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A pain-free way to handle a mesh of peers via WebRTC",
   "main": "index.js",
   "scripts": {
@@ -10,10 +10,7 @@
   "bin": {
     "coven": "./bin/coven.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/oakfang/coven.git"
-  },
+  "repository": "git+https://github.com/oakfang/coven.git",
   "keywords": [
     "peer",
     "p2p",
@@ -27,9 +24,11 @@
   },
   "homepage": "https://github.com/oakfang/coven#readme",
   "dependencies": {
-    "simple-peer": "^6.2.1",
-    "uuid": "^3.0.1",
-    "ws": "^1.1.1",
-    "wrtc": "0.0.61"
+    "simple-peer": "^8.1.1",
+    "uuid": "^3.1.0",
+    "ws": "^3.2.0"
+  },
+  "devDependencies": {
+    "wrtc": "^0.0.62"
   }
 }

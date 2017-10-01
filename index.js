@@ -1,7 +1,5 @@
 const EventEmitter = require('events');
 const Peer = require('simple-peer');
-const WebSocket = require('ws');
-const wrtc = require('wrtc');
 const uuid = require('uuid');
 
 const getOptions = ({
@@ -9,16 +7,19 @@ const getOptions = ({
   signaling='ws://localhost:3000',
   room='default',
   maxPeers=Infinity,
+  ws,
+  wrtc,
 }={}) => ({
   peerSpec: Object.assign({ wrtc }, peerSpec || {}),
   signaling,
   room,
   maxPeers,
+  ws,
 });
 
-const getSignalingServer = signaling => {
+const getSignalingServer = (signaling, wsContructor) => {
   if (typeof signaling === 'string') {
-    return new WebSocket(signaling);
+    return new wsContructor(signaling);
   }
   return signaling;
 };
@@ -28,10 +29,15 @@ class Coven extends EventEmitter {
     super();
     this.peers = new Map();
     this.id = uuid();
-    const { peerSpec, signaling, room, maxPeers } = getOptions(options);
+    const { peerSpec, signaling, room, maxPeers, ws } = getOptions(options);
     this.room = room;
     this.spec = peerSpec;
-    this.server = getSignalingServer(signaling);
+    this.server = getSignalingServer(signaling, ws || global.WebSocket);
+    if (!this.server.on) {
+      this.server.on = (etype, cb) => this.server.addEventListener(etype, e => cb(e.data));
+    }
+
+    this.server.on('error', e => this.emit('error', e));
 
     this.server.on('open', () => {
       this._signal('UP', this.id, null, true);
