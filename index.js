@@ -91,9 +91,7 @@ class Coven extends EventEmitter {
 
   broadcast(data) {
     for (const peer of this.peers.values()) {
-      if (peer.connected) {
-        peer.send(data);
-      }
+      peer.send(data);
     }
   }
 }
