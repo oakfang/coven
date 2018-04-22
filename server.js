@@ -49,7 +49,7 @@ function getServer(config, onMessage) {
   const rooms = {};
 
   wss.on("connection", ws => {
-    ws.on("close", () => {
+    const onClose = () => {
       const roomName = roomBySocket.get(ws);
       if (roomName) {
         const room = rooms[roomName];
@@ -58,7 +58,9 @@ function getServer(config, onMessage) {
           delete rooms[roomName];
         }
       }
-    });
+    };
+    ws.on("close", onClose);
+    ws.on("error", onClose);
     ws.on("message", msg => {
       const { room: roomName, origin, target, type, data } = JSON.parse(msg);
       onMessage && onMessage({ room: roomName, origin, target, type, data });
