@@ -51,7 +51,7 @@ function getServer(config, onMessage) {
   wss.on("connection", ws => {
     const onClose = () => {
       const roomName = roomBySocket.get(ws);
-      if (roomName) {
+      if (roomName && rooms[roomName]) {
         const room = rooms[roomName];
         room.removePeer(ws);
         if (room.size === 0) {
