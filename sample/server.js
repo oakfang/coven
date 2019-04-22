@@ -5,6 +5,7 @@ const PORT = +(process.env.PORT || DEFAULT_PORT);
 
 require('../server')({
   port: PORT,
-}, ({ room, type, origin, target}) => {
-  console.log(`[${room}::${type}] ${origin} -> ${target || '<BROADCAST>'}`)
+  onMessage({ room, type, origin, target }) {
+    console.log(`[${room}::${type}] ${origin} -> ${target || '<BROADCAST>'}`);
+  },
 });

@@ -1,24 +1,24 @@
-const EventEmitter = require("events");
-const Peer = require("simple-peer");
-const uuid = require("uuid");
+const EventEmitter = require('events');
+const Peer = require('simple-peer');
+const uuid = require('uuid');
 
 const getOptions = ({
   peerSpec = null,
-  signaling = "ws://localhost:3000",
-  room = "default",
+  signaling = 'ws://localhost:3000',
+  room = 'default',
   maxPeers = Infinity,
   ws,
-  wrtc
+  wrtc,
 } = {}) => ({
   peerSpec: Object.assign({ wrtc }, peerSpec || {}),
   signaling,
   room,
   maxPeers,
-  ws
+  ws,
 });
 
 const getSignalingServer = (signaling, wsContructor) => {
-  if (typeof signaling === "string") {
+  if (typeof signaling === 'string') {
     return new wsContructor(signaling);
   }
   return signaling;
@@ -38,28 +38,33 @@ class Coven extends EventEmitter {
         this.server.addEventListener(etype, e => cb(e.data));
     }
 
-    this.server.on("error", e => this.emit("error", e));
+    this.server.on('error', e => this.emit('error', e));
 
-    this.server.on("open", () => {
-      this._signal("UP", this.id, null, true);
-      this.emit("connected");
+    this.server.on('open', () => {
+      this._signal('UP', this.id, null, true);
+      this.emit('open');
     });
 
-    this.server.on("message", msg => {
+    this.server.on('message', msg => {
       const { type, origin, target, data } = JSON.parse(msg);
       if (origin === this.id) return;
-      this.emit("signal", { type, origin, target, data });
+      this.emit('signal', { type, origin, target, data });
       switch (type) {
-        case "UP": {
+        case 'UP': {
           if (!this.peers.has(origin) && this.peers.size < maxPeers) {
             this.peers.set(origin, this._getPeer(origin, data));
             if (data) {
-              this._signal("UP", this.id, origin, false);
+              this._signal('UP', this.id, origin, false);
             }
           }
           return;
         }
-        case "SIGNAL": {
+        case 'DOWN': {
+          if (this.peers.has(origin)) {
+            this.peers.get(origin).emit('close');
+          }
+        }
+        case 'SIGNAL': {
           if (target !== this.id) return;
           this.peers.get(origin).signal(data);
           return;
@@ -76,7 +81,7 @@ class Coven extends EventEmitter {
         room,
         origin,
         target,
-        data
+        data,
       })
     );
   }
@@ -85,28 +90,41 @@ class Coven extends EventEmitter {
     const peer = new Peer(
       Object.assign(
         {
-          initiator
+          initiator,
         },
         this.spec
       )
     );
     peer.covenId = id;
-    peer.on("signal", data => this._signal("SIGNAL", this.id, id, data));
-    peer.once("close", () => this.peers.delete(id));
-    peer.once("connect", () => this.emit("peer", peer));
+    peer.on('signal', data => this._signal('SIGNAL', this.id, id, data));
+    peer.once('close', () => {
+      this.peers.delete(id);
+      this.emit('disconnection', id);
+    });
+    peer.once('connect', () => this.emit('connection', id));
+    peer.on('data', data =>
+      this.emit('message', { peerId: id, message: JSON.parse(data) })
+    );
     return peer;
   }
 
-  get size() {
-    return this._getConnectedPeers().length;
+  get activePeers() {
+    return Array.from(this.peers.entries())
+      .filter(([, { connected }]) => connected)
+      .map(([peerId]) => peerId);
   }
 
-  _getConnectedPeers() {
-    return Array.from(this.peers.values()).filter(({ connected }) => connected);
+  get size() {
+    return this.activePeers.length;
+  }
+
+  sendTo(peerId, data) {
+    const peer = this.peers.get(peerId);
+    peer && peer.send(JSON.stringify(data));
   }
 
   broadcast(data) {
-    this._getConnectedPeers().forEach(peer => peer.send(data));
+    this.activePeers.forEach(peerId => this.sendTo(peerId, data));
   }
 }
 

@@ -1,4 +1,4 @@
-const WebSocket = require("ws");
+const WebSocket = require('ws');
 
 class Room {
   constructor() {
@@ -12,6 +12,10 @@ class Room {
 
   hasPeer(peerId) {
     return this._peers.has(peerId);
+  }
+
+  getPeerIdBySocket(socket) {
+    return this._socks.get(socket);
   }
 
   addPeer(socket, peerId) {
@@ -39,29 +43,35 @@ class Room {
   }
 }
 
-function getServer(config, onMessage) {
-  Object.assign(config || {}, {
-    clientTracking: true
-  });
+function getServer({ onMessage, ...config } = {}) {
   const wss = new WebSocket.Server(config);
 
   const roomBySocket = new WeakMap();
   const rooms = {};
 
-  wss.on("connection", ws => {
+  wss.on('connection', ws => {
     const onClose = () => {
       const roomName = roomBySocket.get(ws);
       if (roomName && rooms[roomName]) {
         const room = rooms[roomName];
+        const peerId = room.getPeerIdBySocket(ws);
         room.removePeer(ws);
         if (room.size === 0) {
           delete rooms[roomName];
+        } else {
+          const message = {
+            room: roomName,
+            origin: peerId,
+            type: 'DOWN',
+          };
+          room.broadcast(JSON.stringify(message));
+          onMessage && onMessage(message);
         }
       }
     };
-    ws.on("close", onClose);
-    ws.on("error", onClose);
-    ws.on("message", msg => {
+    ws.on('close', onClose);
+    ws.on('error', onClose);
+    ws.on('message', msg => {
       const { room: roomName, origin, target, type, data } = JSON.parse(msg);
       onMessage && onMessage({ room: roomName, origin, target, type, data });
       if (!rooms[roomName]) rooms[roomName] = new Room();
