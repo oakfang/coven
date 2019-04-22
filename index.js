@@ -2,6 +2,8 @@ const EventEmitter = require('events');
 const Peer = require('simple-peer');
 const uuid = require('uuid');
 
+const ABNORMAL = 1006;
+
 const getOptions = ({
   peerSpec = null,
   signaling = 'ws://localhost:3000',
@@ -32,45 +34,63 @@ class Coven extends EventEmitter {
     const { peerSpec, signaling, room, maxPeers, ws } = getOptions(options);
     this.room = room;
     this.spec = peerSpec;
-    this.server = getSignalingServer(signaling, ws || global.WebSocket);
+    this._setupServer(signaling, ws || global.WebSocket, maxPeers);
+  }
+
+  close() {
+    this.server.close(1001);
+    this.peers.clear();
+  }
+
+  _setupServer(signaling, wsContructor, maxPeers, reconnect = false) {
+    this.server = getSignalingServer(signaling, wsContructor);
     if (!this.server.on) {
       this.server.on = (etype, cb) =>
         this.server.addEventListener(etype, e => cb(e.data));
     }
 
-    this.server.on('error', e => this.emit('error', e));
-
-    this.server.on('open', () => {
-      this._signal('UP', this.id, null, true);
-      this.emit('open');
-    });
-
-    this.server.on('message', msg => {
-      const { type, origin, target, data } = JSON.parse(msg);
-      if (origin === this.id) return;
-      this.emit('signal', { type, origin, target, data });
-      switch (type) {
-        case 'UP': {
-          if (!this.peers.has(origin) && this.peers.size < maxPeers) {
-            this.peers.set(origin, this._getPeer(origin, data));
-            if (data) {
-              this._signal('UP', this.id, origin, false);
+    this.server
+      .once('close', code => {
+        if (code === ABNORMAL) {
+          this._setupServer(signaling, wsContructor, maxPeers, true);
+        }
+      })
+      .on('error', e => this.emit('error', e))
+      .on('open', () => {
+        if (reconnect) {
+          this._signal('KA', this.id);
+          this.emit('reconnect');
+        } else {
+          this._signal('UP', this.id, null, true);
+          this.emit('open');
+        }
+      })
+      .on('message', msg => {
+        const { type, origin, target, data } = JSON.parse(msg);
+        if (origin === this.id) return;
+        this.emit('signal', { type, origin, target, data });
+        switch (type) {
+          case 'UP': {
+            if (!this.peers.has(origin) && this.peers.size < maxPeers) {
+              this.peers.set(origin, this._getPeer(origin, data));
+              if (data) {
+                this._signal('UP', this.id, origin, false);
+              }
+            }
+            return;
+          }
+          case 'DOWN': {
+            if (this.peers.has(origin)) {
+              this.peers.get(origin).emit('close');
             }
           }
-          return;
-        }
-        case 'DOWN': {
-          if (this.peers.has(origin)) {
-            this.peers.get(origin).emit('close');
+          case 'SIGNAL': {
+            if (target !== this.id) return;
+            this.peers.get(origin).signal(data);
+            return;
           }
         }
-        case 'SIGNAL': {
-          if (target !== this.id) return;
-          this.peers.get(origin).signal(data);
-          return;
-        }
-      }
-    });
+      });
   }
 
   _signal(type, origin, target, data) {

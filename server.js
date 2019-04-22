@@ -1,4 +1,6 @@
 const WebSocket = require('ws');
+const ABNORMAL = 1006;
+const KA = 'KA';
 
 class Room {
   constructor() {
@@ -50,12 +52,19 @@ function getServer({ onMessage, ...config } = {}) {
   const rooms = {};
 
   wss.on('connection', ws => {
-    const onClose = () => {
+    const onClose = reason => {
       const roomName = roomBySocket.get(ws);
       if (roomName && rooms[roomName]) {
         const room = rooms[roomName];
         const peerId = room.getPeerIdBySocket(ws);
         room.removePeer(ws);
+        if (reason === ABNORMAL) {
+          return setTimeout(() => {
+            if (!room.hasPeer(peerId)) {
+              onClose();
+            }
+          }, 500);
+        }
         if (room.size === 0) {
           delete rooms[roomName];
         } else {
@@ -80,6 +89,7 @@ function getServer({ onMessage, ...config } = {}) {
         room.addPeer(ws, origin);
         roomBySocket.set(ws, roomName);
       }
+      if (type === KA) return;
       if (!target) return room.broadcast(msg);
       return room.sendTo(target, msg);
     });
