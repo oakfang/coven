@@ -45,12 +45,14 @@ class Coven extends EventEmitter {
   _setupServer(signaling, wsContructor, maxPeers, reconnect = false) {
     this.server = getSignalingServer(signaling, wsContructor);
     if (!this.server.on) {
-      this.server.on = (etype, cb) =>
+      this.server.on = (etype, cb) => {
         this.server.addEventListener(etype, e => cb(e.data));
+        return this.server;
+      };
     }
 
     this.server
-      .once('close', code => {
+      .on('close', code => {
         if (code === ABNORMAL) {
           this._setupServer(signaling, wsContructor, maxPeers, true);
         }

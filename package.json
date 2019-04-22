@@ -1,6 +1,6 @@
 {
   "name": "coven",
-  "version": "0.4.1",
+  "version": "0.4.3",
   "description": "A pain-free way to handle a mesh of peers via WebRTC",
   "main": "index.js",
   "scripts": {
