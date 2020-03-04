@@ -127,8 +127,11 @@ class Coven extends EventEmitter {
     peer.on('data', data =>
       this.emit('message', { peerId: id, message: JSON.parse(data) })
     );
+    peer.on('stream', stream => this.emit('stream', { peerId: id, stream }));
     return peer;
   }
+
+
 
   get activePeers() {
     return Array.from(this.peers.entries())
@@ -145,8 +148,17 @@ class Coven extends EventEmitter {
     peer && peer.send(JSON.stringify(data));
   }
 
+  streamTo(peerId, stream) {
+    const peer = this.peers.get(peerId);
+    peer && peer.addStream(stream);
+  }
+
   broadcast(data) {
     this.activePeers.forEach(peerId => this.sendTo(peerId, data));
+  }
+
+  broadcastStream(stream) {
+    this.activePeers.forEach(peerId => this.streamTo(peerId, stream));
   }
 }
 

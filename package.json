@@ -1,6 +1,6 @@
 {
   "name": "coven",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "description": "A pain-free way to handle a mesh of peers via WebRTC",
   "main": "index.js",
   "scripts": {
@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/oakfang/coven#readme",
   "dependencies": {
-    "simple-peer": "^8.5.0",
+    "simple-peer": "^9.6.2",
     "uuid": "^3.3.2",
     "ws": "^6.2.1"
   },
@@ -28,6 +28,6 @@
     "nefarious": "^3.1.0",
     "nyc": "^14.0.0",
     "proxyquire": "^2.1.0",
-    "wrtc": "^0.3.7"
+    "wrtc": "^0.4.4"
   }
 }
